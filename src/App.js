@@ -20,6 +20,29 @@ function App() {
 			});
 	}, []);
 
+	useEffect(() => {
+		if (currentRoom) {
+			const interval = setInterval(() => {
+				axios
+					.post(
+						'https://lambda-treasure-hunt.herokuapp.com/api/adv/move/',
+						{ direction: 'n' },
+						{
+							headers: { Authorization: process.env.REACT_APP_EXPLORER_TOKEN }
+						}
+					)
+					.then(res => {
+						setCurrentRoom(res.data);
+					})
+					.catch(err => {
+						console.log(err);
+					});
+			}, 1000 * currentRoom.cooldown);
+
+			return () => clearInterval(interval);
+		}
+	}, [currentRoom]);
+
 	if (!currentRoom) {
 		return <div>loading...</div>;
 	}
