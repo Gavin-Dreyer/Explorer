@@ -27,59 +27,93 @@ function App() {
 					rmConnections = { ...rmConnections, [`${exit}`]: '?' };
 				});
 
+				setConnections({
+					[`${res.data.room_id}`]: rmConnections
+				});
 				setStack(allExits);
-				setConnections({ [`${res.data.room_id}`]: rmConnections });
 			})
 			.catch(err => {
 				console.log(err);
 			});
 	}, []);
 
-	console.log(stack, connections);
 	useEffect(() => {
 		if (currentRoom) {
 			const dft = startingRoom => {
-				let visitedRms = new Set();
+				let path = stack.pop();
+				console.log(connections);
+				axios
+					.post(
+						'https://lambda-treasure-hunt.herokuapp.com/api/adv/move/',
+						{ direction: path[1] },
+						{
+							headers: { Authorization: process.env.REACT_APP_EXPLORER_TOKEN }
+						}
+					)
+					.then(res => {
+						if (path[1] === 'w') {
+							let allExits = [];
+							let rmConnections = {};
 
-				console.log(stack, connections);
+							connections[currentRoom.room_id].w = res.data.room_id;
 
-				// while (stack.size() > 0) {
-				// let prevRm = startingRoom;
-				//let path = stack.pop();
+							res.data.exits.forEach(exit => {
+								allExits = [...allExits, [res.data.room_id, exit]];
+								if (exit === 'e') {
+									rmConnections = {
+										...rmConnections,
+										[`${exit}`]: currentRoom.room_id
+									};
+								} else {
+									rmConnections = { ...rmConnections, [`${exit}`]: '?' };
+								}
+							});
+							setConnections({
+								...connections,
+								[`${res.data.room_id}`]: rmConnections
+							});
+							setVisited([...visited, res.data.room_id]);
+							setCurrentRoom(res.data);
+							setStack([...stack, ...allExits]);
+						} else if (path[1] === 'e') {
+							let allExits = [];
+							let rmConnections = {};
 
-				// axios
-				// 	.post(
-				// 		'https://lambda-treasure-hunt.herokuapp.com/api/adv/move/',
-				// 		{ direction: path[1] },
-				// 		{
-				// 			headers: { Authorization: process.env.REACT_APP_EXPLORER_TOKEN }
-				// 		}
-				// 	)
-				// 	.then(res => {
-				// 		setCurrentRoom(res.data);
-				// 		if (path[1] === 'w') {
-				// 			connections[prevRm].w = currentRoom.room_id;
-				// 		} else if (path[1] === 'e') {
-				// 			connections[prevRm].e = currentRoom.room_id;
-				// 		} else if (path[1] === 'n') {
-				// 			connections[prevRm].n = currentRoom.room_id;
-				// 		} else {
-				// 			connections[prevRm].s = currentRoom.room_id;
-				// 		}
-				// 		setVisited([...visited, res.data.room_id]);
-				// 	})
-				// 	.catch(err => {
-				// 		console.log(err);
-				// 	});
-				//don't
-				//}
+							connections[currentRoom.room_id].e = res.data.room_id;
+
+							res.data.exits.forEach(exit => {
+								allExits = [...allExits, [res.data.room_id, exit]];
+								if (exit === 'w') {
+									rmConnections = {
+										...rmConnections,
+										[`${exit}`]: currentRoom.room_id
+									};
+								} else {
+									rmConnections = { ...rmConnections, [`${exit}`]: '?' };
+								}
+							});
+
+							setConnections({
+								...connections,
+								[`${res.data.room_id}`]: rmConnections
+							});
+							setVisited([...visited, res.data.room_id]);
+							setCurrentRoom(res.data);
+							setStack([...stack, ...allExits]);
+						} else if (path[1] === 'n') {
+							connections[currentRoom.room_id].n = res.data.room_id;
+						} else {
+							connections[currentRoom.room_id].s = res.data.room_id;
+						}
+					})
+					.catch(err => {
+						console.log(err);
+					});
 			};
-			dft(currentRoom);
 
-			//setTimeout(dft, 1000 * currentRoom.cooldown, currentRoom);
-			//console.log(stack, connections);
+			setTimeout(dft, 1000 * 15, currentRoom);
 		}
-	}, [currentRoom]);
+	}, [stack]);
 
 	if (!currentRoom) {
 		return <div>loading...</div>;
