@@ -112,6 +112,11 @@ function App() {
 			};
 
 			setTimeout(dft, 1000 * 15, currentRoom);
+			let postRM = { ...currentRoom, knownConnections: connections };
+			axios
+				.post('http://localhost:8000', postRM)
+				.then(res => console.log(res))
+				.catch(err => console.log(err));
 		}
 	}, [stack]);
 

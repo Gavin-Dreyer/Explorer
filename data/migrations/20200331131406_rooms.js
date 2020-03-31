@@ -10,6 +10,10 @@ exports.up = function(knex) {
 		tbl.string('items');
 		tbl.string('exits');
 		tbl.string('messages');
+		tbl.string('n_to');
+		tbl.string('s_to');
+		tbl.string('e_to');
+		tbl.string('w_to');
 	});
 };
 
