@@ -21,11 +21,9 @@ server.post('/', async (req, res) => {
 	let items = req.body.items.join();
 	let messages = req.body.messages.join();
 
-	console.log(req.body.knownConnections[req.body.room_id]);
-
-	let e = req.body.knownConnections[req.body.room_id].e;
 	let n = req.body.knownConnections[req.body.room_id].n;
 	let s = req.body.knownConnections[req.body.room_id].s;
+	let e = req.body.knownConnections[req.body.room_id].e;
 	let w = req.body.knownConnections[req.body.room_id].w;
 
 	const roomInfo = {
@@ -51,7 +49,34 @@ server.post('/', async (req, res) => {
 		);
 
 		if (checkIfRoomExists.length > 0) {
-			let connections = { n_to: n, s_to: s, e_to: e, w_to: w };
+			let arr = [
+				checkIfRoomExists[0].n_to,
+				checkIfRoomExists[0].s_to,
+				checkIfRoomExists[0].e_to,
+				checkIfRoomExists[0].w_to
+			];
+
+			arr = await arr.map((item, idx) => {
+				if ((item === '?' || item === null) && idx === 0) {
+					return (item = n);
+				} else if ((item === '?' || item === null) && idx === 1) {
+					return (item = s);
+				} else if ((item === '?' || item === null) && idx === 2) {
+					return (item = e);
+				} else if ((item === '?' || item === null) && idx === 3) {
+					return (item = w);
+				} else {
+					return item;
+				}
+			});
+
+			let connections = {
+				n_to: arr[0],
+				s_to: arr[1],
+				e_to: arr[2],
+				w_to: arr[3]
+			};
+
 			await db('rooms')
 				.where('room_id', req.body.room_id)
 				.update(connections);
