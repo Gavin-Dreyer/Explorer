@@ -118,7 +118,7 @@ function App() {
 	if (!currentRoom) {
 		return <div>loading...</div>;
 	}
-
+	console.log(currentRoom);
 	return (
 		<div className="App">
 			<h3>Explorer</h3>
