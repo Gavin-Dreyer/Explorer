@@ -41,7 +41,7 @@ function App() {
 		if (currentRoom) {
 			const dft = startingRoom => {
 				let path = stack.pop();
-				console.log(connections);
+				console.log(stack);
 				axios
 					.post(
 						'https://lambda-treasure-hunt.herokuapp.com/api/adv/move/',
@@ -123,7 +123,6 @@ function App() {
 	if (!currentRoom) {
 		return <div>loading...</div>;
 	}
-	console.log(currentRoom);
 	return (
 		<div className="App">
 			<h3>Explorer</h3>

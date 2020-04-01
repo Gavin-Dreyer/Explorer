@@ -36,6 +36,7 @@ server.post('/', async (req, res) => {
 		items: items,
 		exits: exits,
 		messages: messages,
+		visited: true,
 		n_to: n,
 		s_to: s,
 		e_to: e,
