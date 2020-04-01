@@ -46,6 +46,13 @@ function App() {
 	useEffect(() => {
 		if (currentRoom) {
 			const dft = startingRoom => {
+				axios
+					.get('http://localhost:8000')
+					.then(res => {
+						let visitedRms = res.data.map(data => data['room_id']);
+						setVisited(visitedRms);
+					})
+					.catch(err => console.log(err));
 				let path = stack.pop();
 				console.log(stack, visited);
 				axios
