@@ -20,7 +20,6 @@ function App() {
 				let rmConnections = {};
 
 				setCurrentRoom(res.data);
-				setVisited([...visited, res.data.room_id]);
 
 				res.data.exits.forEach(exit => {
 					allExits = [...allExits, [res.data.room_id, exit]];
@@ -35,13 +34,20 @@ function App() {
 			.catch(err => {
 				console.log(err);
 			});
+		axios
+			.get('http://localhost:8000')
+			.then(res => {
+				let visitedRms = res.data.map(data => data['room_id']);
+				setVisited(visitedRms);
+			})
+			.catch(err => console.log(err));
 	}, []);
 
 	useEffect(() => {
 		if (currentRoom) {
 			const dft = startingRoom => {
 				let path = stack.pop();
-				console.log(stack);
+				console.log(stack, visited);
 				axios
 					.post(
 						'https://lambda-treasure-hunt.herokuapp.com/api/adv/move/',
@@ -72,7 +78,6 @@ function App() {
 								...connections,
 								[`${res.data.room_id}`]: rmConnections
 							});
-							setVisited([...visited, res.data.room_id]);
 							setCurrentRoom(res.data);
 							setStack([...stack, ...allExits]);
 						} else if (path[1] === 'e') {
@@ -97,7 +102,6 @@ function App() {
 								...connections,
 								[`${res.data.room_id}`]: rmConnections
 							});
-							setVisited([...visited, res.data.room_id]);
 							setCurrentRoom(res.data);
 							setStack([...stack, ...allExits]);
 						} else if (path[1] === 'n') {

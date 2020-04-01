@@ -9,7 +9,7 @@ server.use(cors());
 
 server.get('/', async (req, res) => {
 	try {
-		const rooms = await db('rooms');
+		const rooms = await db('rooms').select(['room_id']);
 		res.status(200).json(rooms);
 	} catch (err) {
 		res.status(400).json(err);
