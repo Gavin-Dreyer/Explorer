@@ -7,13 +7,15 @@ import './App.css';
 function App() {
 	const [currentRoom, setCurrentRoom] = useState();
 	const [visited, setVisited] = useState([]);
-	const [stack, setStack] = useState([]);
 	const [connections, setConnections] = useState();
+	const [stack, setStack] = useState([]);
+	const [path, setPath] = useState([]);
 
 	useEffect(() => {
 		axios
 			.get('http://localhost:8000')
 			.then(res => {
+				console.log(res.data);
 				let visitedRms = res.data.map(data => data['room_id']);
 				setVisited(visitedRms);
 			})
@@ -55,6 +57,7 @@ function App() {
 					.catch(err => console.log(err));
 
 				let path = stack.pop();
+
 				console.log(path);
 				axios
 					.post(
@@ -65,6 +68,33 @@ function App() {
 						}
 					)
 					.then(res => {
+						console.log(res.data.room_id, stack[stack.length - 1]);
+						if (res.data.room_id !== stack[stack.length - 1]) {
+							axios
+								.post('http://localhost:8000/path', {
+									curRm: res.data.room_id,
+									dest: stack[stack.length - 1]
+								})
+								.then(res => {
+									while (res.data.length > 0) {
+										let dir = res.data.unshift();
+										axios
+											.post(
+												'https://lambda-treasure-hunt.herokuapp.com/api/adv/move/',
+												{ direction: dir },
+												{
+													headers: {
+														Authorization: process.env.REACT_APP_EXPLORER_TOKEN
+													}
+												}
+											)
+											.then(res => console.log(res))
+											.catch(res => console.log(res));
+									}
+								})
+								.catch(err => console.log(err));
+						}
+
 						if (path[1] === 'w') {
 							let allExits = [];
 							let rmConnections = {};
@@ -184,19 +214,17 @@ function App() {
 						console.log(err);
 					});
 			};
-			console.log(currentRoom.cooldown, 'CD');
-			// while (stack.length > 0) {
+
 			setTimeout(dft, 1000 * 16, currentRoom);
-			let postRM = {
-				...currentRoom,
-				knownConnections: connections,
-				stack: stack
-			};
-			axios
-				.post('http://localhost:8000', postRM)
-				.then(res => console.log(res))
-				.catch(err => console.log(err));
-			//}
+			// let postRM = {
+			// 	...currentRoom,
+			// 	knownConnections: connections,
+			// 	stack: stack
+			// };
+			// axios
+			// 	.post('http://localhost:8000', postRM)
+			// 	.then(res => console.log(res))
+			// 	.catch(err => console.log(err));
 		}
 	}, [stack]);
 

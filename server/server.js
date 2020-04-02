@@ -9,8 +9,91 @@ server.use(cors());
 
 server.get('/', async (req, res) => {
 	try {
-		const rooms = await db('rooms').select(['room_id']);
+		const rooms = await db('rooms').select([
+			'room_id',
+			'n_to',
+			's_to',
+			'w_to',
+			'e_to'
+		]);
 		res.status(200).json(rooms);
+	} catch (err) {
+		res.status(400).json(err);
+	}
+});
+
+server.post('/path', async (req, res) => {
+	try {
+		let queue = [];
+		let visited = new Set();
+
+		const rooms = await db('rooms').select([
+			'room_id',
+			'n_to',
+			's_to',
+			'w_to',
+			'e_to'
+		]);
+
+		const curRm = rooms.find(room => room.room_id === req.body.curRm);
+		const dest = rooms.find(room => room.room_id === req.body.dest);
+
+		queue.push([curRm]);
+
+		while (queue.length > 0) {
+			let rm = queue.shift();
+
+			if (!visited.has(rm[rm.length - 1].room_id)) {
+				visited.add(rm[rm.length - 1].room_id);
+
+				if (rm[rm.length - 1].room_id === dest.room_id) {
+					let path = [];
+					for (let i = 0; i < rm.length - 1; i++) {
+						if (
+							rm[i + 1].room_id === Number(rm[i].n_to) &&
+							rm[i].n_to !== null
+						) {
+							path.push('n');
+						} else if (
+							rm[i + 1].room_id === Number(rm[i].s_to) &&
+							rm[i].s_to !== null
+						) {
+							path.push('s');
+						} else if (
+							rm[i + 1].room_id === Number(rm[i].e_to) &&
+							rm[i].e_to !== null
+						) {
+							path.push('e');
+						} else if (
+							rm[i + 1].room_id === Number(rm[i].w_to) &&
+							rm[i].w_to !== null
+						) {
+							path.push('w');
+						}
+					}
+
+					res.status(200).json(path);
+				} else {
+					let dir = ['n', 's', 'w', 'e'];
+					for (let i = 0; i < 4; i++) {
+						if (
+							rm[rm.length - 1][`${dir[i]}_to`] !== null &&
+							rm[rm.length - 1][`${dir[i]}_to`] !== '?'
+						) {
+							const pathRm = rooms.find(
+								room =>
+									room.room_id === Number(rm[rm.length - 1][`${dir[i]}_to`])
+							);
+
+							temp = [...rm, pathRm];
+							queue.push(temp);
+						}
+					}
+				}
+			}
+		}
+
+		res.json({ k: 't2' });
 	} catch (err) {
 		res.status(400).json(err);
 	}
