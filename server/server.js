@@ -22,6 +22,26 @@ server.get('/', async (req, res) => {
 	}
 });
 
+server.get('/:id', async (req, res) => {
+	let id = req.params.id;
+	try {
+		const [room] = await db('rooms')
+			.select(['room_id', 'n_to', 's_to', 'w_to', 'e_to'])
+			.where('room_id', id);
+
+		let connections = [
+			Number(room['n_to']),
+			Number(room['s_to']),
+			Number(room['e_to']),
+			Number(room['w_to'])
+		];
+
+		res.status(200).json(connections);
+	} catch (err) {
+		res.status(400).json(err);
+	}
+});
+
 server.post('/path', async (req, res) => {
 	try {
 		let queue = [];
@@ -42,6 +62,8 @@ server.post('/path', async (req, res) => {
 
 		while (queue.length > 0) {
 			let rm = queue.shift();
+
+			console.log(rm);
 
 			if (!visited.has(rm[rm.length - 1].room_id)) {
 				visited.add(rm[rm.length - 1].room_id);
@@ -104,7 +126,7 @@ server.post('/', async (req, res) => {
 	let items = req.body.items.join();
 	let messages = req.body.messages.join();
 
-	console.log(req.body.stack);
+	//console.log(req.body.stack);
 
 	let n = req.body.knownConnections[req.body.room_id].n;
 	let s = req.body.knownConnections[req.body.room_id].s;
@@ -167,10 +189,10 @@ server.post('/', async (req, res) => {
 				.where('room_id', req.body.room_id)
 				.update(connections);
 
-			res.status(200).json({ message: 'Successfully updated' });
+			res.status(200).json({ room_id: req.body.room_id });
 		} else {
 			await db('rooms').insert(roomInfo);
-			res.status(201).json({ message: 'Successfully posted' });
+			res.status(201).json({ room_id: req.body.room_id });
 		}
 	} catch (err) {
 		res.status(400).json(err);

@@ -47,7 +47,7 @@ function App() {
 	useEffect(() => {
 		if (currentRoom) {
 			const dft = startingRoom => {
-				console.log(stack);
+				//console.log(stack);
 				axios
 					.get('http://localhost:8000')
 					.then(res => {
@@ -58,7 +58,7 @@ function App() {
 
 				let path = stack.pop();
 
-				console.log(path);
+				//console.log(path);
 				axios
 					.post(
 						'https://lambda-treasure-hunt.herokuapp.com/api/adv/move/',
@@ -68,33 +68,6 @@ function App() {
 						}
 					)
 					.then(res => {
-						console.log(res.data.room_id, stack[stack.length - 1]);
-						if (res.data.room_id !== stack[stack.length - 1]) {
-							axios
-								.post('http://localhost:8000/path', {
-									curRm: res.data.room_id,
-									dest: stack[stack.length - 1]
-								})
-								.then(res => {
-									while (res.data.length > 0) {
-										let dir = res.data.unshift();
-										axios
-											.post(
-												'https://lambda-treasure-hunt.herokuapp.com/api/adv/move/',
-												{ direction: dir },
-												{
-													headers: {
-														Authorization: process.env.REACT_APP_EXPLORER_TOKEN
-													}
-												}
-											)
-											.then(res => console.log(res))
-											.catch(res => console.log(res));
-									}
-								})
-								.catch(err => console.log(err));
-						}
-
 						if (path[1] === 'w') {
 							let allExits = [];
 							let rmConnections = {};
@@ -215,16 +188,79 @@ function App() {
 					});
 			};
 
-			setTimeout(dft, 1000 * 16, currentRoom);
-			// let postRM = {
-			// 	...currentRoom,
-			// 	knownConnections: connections,
-			// 	stack: stack
-			// };
-			// axios
-			// 	.post('http://localhost:8000', postRM)
-			// 	.then(res => console.log(res))
-			// 	.catch(err => console.log(err));
+			console.log(stack);
+			console.log(currentRoom.room_id, stack[stack.length - 1][0]);
+			if (currentRoom.room_id !== stack[stack.length - 1][0]) {
+				let path = [];
+				let postRM = {
+					...currentRoom,
+					knownConnections: connections,
+					stack: stack
+				};
+				axios
+					.post('http://localhost:8000', postRM)
+					.then(res =>
+						axios
+							.post('http://localhost:8000/path', {
+								curRm: Number(currentRoom.room_id),
+								dest: Number(stack[stack.length - 1][0])
+							})
+							.then(res => {
+								path = [...res.data];
+							})
+							.catch(err => console.log(err))
+					)
+					.catch(err => console.log(err));
+
+				let intervalID = setInterval(function() {
+					if (path.length === 0) {
+						clearInterval(intervalID);
+						return;
+					}
+					console.log(path, 'path before setInt post');
+					axios
+						.post(
+							'https://lambda-treasure-hunt.herokuapp.com/api/adv/move/',
+							{ direction: path[0] },
+							{
+								headers: {
+									Authorization: process.env.REACT_APP_EXPLORER_TOKEN
+								}
+							}
+						)
+						.then(res => {
+							setCurrentRoom(res.data);
+							setStack([...stack]);
+							console.log(res.data, currentRoom, 'AFTER PATH POST');
+						})
+						.catch(err => console.log(err));
+
+					path = path.slice(1, path.length);
+				}, (currentRoom.cooldown + 1) * 1000);
+
+				postRM = {
+					...currentRoom,
+					knownConnections: connections,
+					stack: stack
+				};
+
+				axios
+					.post('http://localhost:8000', postRM)
+					.then(res => console.log(res))
+					.catch(err => console.log(err));
+			} else {
+				console.log(currentRoom.cooldown);
+				setTimeout(dft, (currentRoom.cooldown + 1) * 1000, currentRoom);
+				let postRM = {
+					...currentRoom,
+					knownConnections: connections,
+					stack: stack
+				};
+				axios
+					.post('http://localhost:8000', postRM)
+					.then(res => console.log(res.data))
+					.catch(err => console.log(err));
+			}
 		}
 	}, [stack]);
 
