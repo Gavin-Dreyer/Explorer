@@ -12,13 +12,19 @@ function App() {
 
 	useEffect(() => {
 		axios
+			.get('http://localhost:8000')
+			.then(res => {
+				let visitedRms = res.data.map(data => data['room_id']);
+				setVisited(visitedRms);
+			})
+			.catch(err => console.log(err));
+		axios
 			.get('https://lambda-treasure-hunt.herokuapp.com/api/adv/init/', {
 				headers: { Authorization: process.env.REACT_APP_EXPLORER_TOKEN }
 			})
 			.then(res => {
 				let allExits = [];
 				let rmConnections = {};
-
 				setCurrentRoom(res.data);
 
 				res.data.exits.forEach(exit => {
@@ -34,18 +40,12 @@ function App() {
 			.catch(err => {
 				console.log(err);
 			});
-		axios
-			.get('http://localhost:8000')
-			.then(res => {
-				let visitedRms = res.data.map(data => data['room_id']);
-				setVisited(visitedRms);
-			})
-			.catch(err => console.log(err));
 	}, []);
 
 	useEffect(() => {
 		if (currentRoom) {
 			const dft = startingRoom => {
+				console.log(stack);
 				axios
 					.get('http://localhost:8000')
 					.then(res => {
@@ -53,8 +53,9 @@ function App() {
 						setVisited(visitedRms);
 					})
 					.catch(err => console.log(err));
+
 				let path = stack.pop();
-				console.log(stack, visited);
+				console.log(path);
 				axios
 					.post(
 						'https://lambda-treasure-hunt.herokuapp.com/api/adv/move/',
@@ -86,7 +87,12 @@ function App() {
 								[`${res.data.room_id}`]: rmConnections
 							});
 							setCurrentRoom(res.data);
-							setStack([...stack, ...allExits]);
+
+							if (!visited.includes(res.data.room_id)) {
+								setStack([...stack, ...allExits]);
+							} else {
+								setStack([...stack]);
+							}
 						} else if (path[1] === 'e') {
 							let allExits = [];
 							let rmConnections = {};
@@ -110,24 +116,87 @@ function App() {
 								[`${res.data.room_id}`]: rmConnections
 							});
 							setCurrentRoom(res.data);
-							setStack([...stack, ...allExits]);
+
+							if (!visited.includes(res.data.room_id)) {
+								setStack([...stack, ...allExits]);
+							} else {
+								setStack([...stack]);
+							}
 						} else if (path[1] === 'n') {
+							let allExits = [];
+							let rmConnections = {};
+
 							connections[currentRoom.room_id].n = res.data.room_id;
+
+							res.data.exits.forEach(exit => {
+								allExits = [...allExits, [res.data.room_id, exit]];
+								if (exit === 's') {
+									rmConnections = {
+										...rmConnections,
+										[`${exit}`]: currentRoom.room_id
+									};
+								} else {
+									rmConnections = { ...rmConnections, [`${exit}`]: '?' };
+								}
+							});
+							setConnections({
+								...connections,
+								[`${res.data.room_id}`]: rmConnections
+							});
+							setCurrentRoom(res.data);
+
+							if (!visited.includes(res.data.room_id)) {
+								setStack([...stack, ...allExits]);
+							} else {
+								setStack([...stack]);
+							}
 						} else {
+							let allExits = [];
+							let rmConnections = {};
+
 							connections[currentRoom.room_id].s = res.data.room_id;
+
+							res.data.exits.forEach(exit => {
+								allExits = [...allExits, [res.data.room_id, exit]];
+								if (exit === 'n') {
+									rmConnections = {
+										...rmConnections,
+										[`${exit}`]: currentRoom.room_id
+									};
+								} else {
+									rmConnections = { ...rmConnections, [`${exit}`]: '?' };
+								}
+							});
+							setConnections({
+								...connections,
+								[`${res.data.room_id}`]: rmConnections
+							});
+							setCurrentRoom(res.data);
+
+							if (!visited.includes(res.data.room_id)) {
+								setStack([...stack, ...allExits]);
+							} else {
+								setStack([...stack]);
+							}
 						}
 					})
 					.catch(err => {
 						console.log(err);
 					});
 			};
-
-			setTimeout(dft, 1000 * 15, currentRoom);
-			let postRM = { ...currentRoom, knownConnections: connections };
+			console.log(currentRoom.cooldown, 'CD');
+			// while (stack.length > 0) {
+			setTimeout(dft, 1000 * 16, currentRoom);
+			let postRM = {
+				...currentRoom,
+				knownConnections: connections,
+				stack: stack
+			};
 			axios
 				.post('http://localhost:8000', postRM)
 				.then(res => console.log(res))
 				.catch(err => console.log(err));
+			//}
 		}
 	}, [stack]);
 

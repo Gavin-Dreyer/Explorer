@@ -21,6 +21,8 @@ server.post('/', async (req, res) => {
 	let items = req.body.items.join();
 	let messages = req.body.messages.join();
 
+	console.log(req.body.stack);
+
 	let n = req.body.knownConnections[req.body.room_id].n;
 	let s = req.body.knownConnections[req.body.room_id].s;
 	let e = req.body.knownConnections[req.body.room_id].e;
