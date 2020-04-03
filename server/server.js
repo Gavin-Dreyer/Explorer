@@ -63,8 +63,6 @@ server.post('/path', async (req, res) => {
 		while (queue.length > 0) {
 			let rm = queue.shift();
 
-			console.log(rm);
-
 			if (!visited.has(rm[rm.length - 1].room_id)) {
 				visited.add(rm[rm.length - 1].room_id);
 

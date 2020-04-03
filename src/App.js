@@ -8,7 +8,21 @@ function App() {
 	const [currentRoom, setCurrentRoom] = useState();
 	const [visited, setVisited] = useState([]);
 	const [connections, setConnections] = useState();
-	const [stack, setStack] = useState([]);
+	const [stack, setStack] = useState([
+		[0, 'n'],
+		[2, 'n'],
+		[2, 's'],
+		[9, 'n'],
+		[9, 's'],
+		[17, 'n'],
+		[42, 'n'],
+		[80, 'n'],
+		[80, 's'],
+		[86, 's'],
+		[178, 'n'],
+		[243, 's'],
+		[256, 's']
+	]);
 	const [path, setPath] = useState([]);
 
 	useEffect(() => {
@@ -37,7 +51,7 @@ function App() {
 				setConnections({
 					[`${res.data.room_id}`]: rmConnections
 				});
-				setStack(allExits);
+				setStack([...stack, ...allExits]);
 			})
 			.catch(err => {
 				console.log(err);
@@ -184,7 +198,7 @@ function App() {
 						}
 					})
 					.catch(err => {
-						console.log(err);
+						console.log(err, 'EVEN WEIRDER');
 					});
 			};
 
@@ -208,35 +222,35 @@ function App() {
 							.then(res => {
 								path = [...res.data];
 							})
-							.catch(err => console.log(err))
 					)
 					.catch(err => console.log(err));
 
 				let intervalID = setInterval(function() {
-					if (path.length === 0) {
+					if (path.length < 1) {
+						console.log(path, 'inside return catch');
 						clearInterval(intervalID);
-						return;
-					}
-					console.log(path, 'path before setInt post');
-					axios
-						.post(
-							'https://lambda-treasure-hunt.herokuapp.com/api/adv/move/',
-							{ direction: path[0] },
-							{
-								headers: {
-									Authorization: process.env.REACT_APP_EXPLORER_TOKEN
+						setStack([...stack]);
+					} else {
+						console.log(path, 'path before setInt post');
+						axios
+							.post(
+								'https://lambda-treasure-hunt.herokuapp.com/api/adv/move/',
+								{ direction: path[0] },
+								{
+									headers: {
+										Authorization: process.env.REACT_APP_EXPLORER_TOKEN
+									}
 								}
-							}
-						)
-						.then(res => {
-							setCurrentRoom(res.data);
-							setStack([...stack]);
-							console.log(res.data, currentRoom, 'AFTER PATH POST');
-						})
-						.catch(err => console.log(err));
+							)
+							.then(res => {
+								console.log(res.data, currentRoom, 'AFTER PATH POST');
+								setCurrentRoom(res.data);
+							})
+							.catch(err => console.log(err, 'WEIRD'));
 
-					path = path.slice(1, path.length);
-				}, (currentRoom.cooldown + 1) * 1000);
+						path = path.slice(1, path.length);
+					}
+				}, (currentRoom.cooldown + 2) * 1000);
 
 				postRM = {
 					...currentRoom,
@@ -249,8 +263,8 @@ function App() {
 					.then(res => console.log(res))
 					.catch(err => console.log(err));
 			} else {
-				console.log(currentRoom.cooldown);
-				setTimeout(dft, (currentRoom.cooldown + 1) * 1000, currentRoom);
+				console.log('HITTING HERE', currentRoom.cooldown + 2);
+				setTimeout(dft, (currentRoom.cooldown + 2) * 1000, currentRoom);
 				let postRM = {
 					...currentRoom,
 					knownConnections: connections,
