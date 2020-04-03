@@ -19,9 +19,7 @@ function App() {
 		[80, 'n'],
 		[80, 's'],
 		[86, 's'],
-		[178, 'n'],
-		[243, 's'],
-		[256, 's']
+		[178, 'n']
 	]);
 	const [path, setPath] = useState([]);
 
@@ -30,7 +28,22 @@ function App() {
 			.get('http://localhost:8000')
 			.then(res => {
 				console.log(res.data);
+				let connects = {};
 				let visitedRms = res.data.map(data => data['room_id']);
+
+				res.data.forEach(rm => {
+					connects = {
+						...connects,
+						[`${rm.room_id}`]: {
+							n: rm.n_to,
+							s: rm.s_to,
+							e: rm.e_to,
+							w: rm.w_to
+						}
+					};
+				});
+
+				setConnections(connects);
 				setVisited(visitedRms);
 			})
 			.catch(err => console.log(err));
@@ -48,9 +61,9 @@ function App() {
 					rmConnections = { ...rmConnections, [`${exit}`]: '?' };
 				});
 
-				setConnections({
-					[`${res.data.room_id}`]: rmConnections
-				});
+				// setConnections({
+				// 	[`${res.data.room_id}`]: rmConnections
+				// });
 				setStack([...stack, ...allExits]);
 			})
 			.catch(err => {
@@ -60,6 +73,7 @@ function App() {
 
 	useEffect(() => {
 		if (currentRoom) {
+			console.log(connections);
 			const dft = startingRoom => {
 				//console.log(stack);
 				axios
@@ -198,7 +212,7 @@ function App() {
 						}
 					})
 					.catch(err => {
-						console.log(err, 'EVEN WEIRDER');
+						console.log(err);
 					});
 			};
 
@@ -227,7 +241,6 @@ function App() {
 
 				let intervalID = setInterval(function() {
 					if (path.length < 1) {
-						console.log(path, 'inside return catch');
 						clearInterval(intervalID);
 						setStack([...stack]);
 					} else {
@@ -246,7 +259,7 @@ function App() {
 								console.log(res.data, currentRoom, 'AFTER PATH POST');
 								setCurrentRoom(res.data);
 							})
-							.catch(err => console.log(err, 'WEIRD'));
+							.catch(err => console.log(err));
 
 						path = path.slice(1, path.length);
 					}
@@ -263,7 +276,6 @@ function App() {
 					.then(res => console.log(res))
 					.catch(err => console.log(err));
 			} else {
-				console.log('HITTING HERE', currentRoom.cooldown + 2);
 				setTimeout(dft, (currentRoom.cooldown + 2) * 1000, currentRoom);
 				let postRM = {
 					...currentRoom,
