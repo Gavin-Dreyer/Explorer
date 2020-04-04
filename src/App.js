@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
+import PathFinder from './components/PathFinder';
 //import { Queue, Stack } from './util';
 import './App.css';
 
@@ -8,19 +9,7 @@ function App() {
 	const [currentRoom, setCurrentRoom] = useState();
 	const [visited, setVisited] = useState([]);
 	const [connections, setConnections] = useState();
-	const [stack, setStack] = useState([
-		[0, 'n'],
-		[2, 'n'],
-		[2, 's'],
-		[9, 'n'],
-		[9, 's'],
-		[17, 'n'],
-		[42, 'n'],
-		[80, 'n'],
-		[80, 's'],
-		[86, 's'],
-		[178, 'n']
-	]);
+	const [stack, setStack] = useState([]);
 	const [path, setPath] = useState([]);
 
 	useEffect(() => {
@@ -64,7 +53,7 @@ function App() {
 				// setConnections({
 				// 	[`${res.data.room_id}`]: rmConnections
 				// });
-				setStack([...stack, ...allExits]);
+				setStack([...stack]);
 			})
 			.catch(err => {
 				console.log(err);
@@ -313,6 +302,7 @@ function App() {
 			<div className="room">{currentRoom.errors}</div>
 			<div className="room">{currentRoom.messages}</div>
 			<div>{visited}</div>
+			<PathFinder />
 		</div>
 	);
 }
